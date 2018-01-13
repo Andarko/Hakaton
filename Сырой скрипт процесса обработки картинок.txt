@@ -1,0 +1,167 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Linq;
+using System.Text;
+using EleWise.ELMA.API;
+using EleWise.ELMA.ConfigurationModel;
+using EleWise.ELMA.Model.Common;
+using EleWise.ELMA.Model.Entities;
+using EleWise.ELMA.Model.Managers;
+using EleWise.ELMA.Model.Types.Settings;
+using EleWise.ELMA.Model.Entities.ProcessContext;
+using Context = EleWise.ELMA.Model.Entities.ProcessContext.P_Test;
+
+namespace EleWise.ELMA.Model.Scripts
+{
+	/// <summary>
+	/// Модуль сценариев процесса "Тест"
+	/// </summary>
+	/// <example> 
+	/// <![CDATA[
+	/// >>>>>>>>>>>>>>>ВАЖНАЯ ИНФОРМАЦИЯ!!!<<<<<<<<<<<<<<<
+	/// Данный редактор создан для работы с PublicAPI. 
+	/// PublicAPI предназначен для разработки сценариев ELMA.
+	/// Например, с помощью PublicAPI можно добавить комментарий к документу:
+	/// //Загружаем документ
+	/// var doc = PublicAPI.Docflow.Document.Load(56);
+	/// //Добавляем комментарий
+	/// PublicAPI.Docflow.Document.AddComment(doc, "тут ваш комментарий");
+	/// 
+	/// Более подробно про PublicAPI вы можете узнать тут: http://www.elma-bpm.ru/kb/article-642ApiRoot.html
+	/// 
+	/// Если же вам нужна более серьёзная разработка, выходящая за рамки PublicAPI, используйте
+	/// сторонние редакторы кода, такие как SharpDevelop и VisualStudio.
+	/// Информацию по запуску кода в стороннем редакторе вы можете найти тут:
+	/// http://www.elma-bpm.ru/kb/article-837.html
+	/// ]]>
+	/// </example>
+	public partial class P_Test_Scripts : EleWise.ELMA.Workflow.Scripts.ProcessScriptBase<Context>
+	{
+		public static Bitmap CombineBitmap (IEnumerable<string> files)
+		{
+			//read all images into memory
+			List<Bitmap> images = new List<Bitmap> ();
+			Bitmap finalImage = null;
+			try {
+				int width = 0;
+				int height = 0;
+				foreach (string image in files) {
+					// create a Bitmap from the file and add it to the list
+					Bitmap bitmap = new Bitmap (image);
+					// update the size of the final bitmap
+					width = bitmap.Width > width ? bitmap.Width : width;
+					height = bitmap.Height > height ? bitmap.Height : height;
+					images.Add (bitmap);
+				}
+				// create a bitmap to hold the combined image
+				finalImage = new Bitmap (width, height);
+				// get a graphics object from the image so we can draw on it
+				using (Graphics g = Graphics.FromImage (finalImage)) {
+					// set background color
+					g.Clear (Color.Transparent);
+					// go through each image and draw it on the final image
+					foreach (Bitmap image in images) {
+						g.DrawImage (image, new Rectangle (0, 0, image.Width, image.Height));
+					}
+				}
+				return finalImage;
+			}
+			catch (Exception) {
+				if (finalImage != null)
+					finalImage.Dispose ();
+				throw;
+			}
+			finally {
+				// clean up memory
+				foreach (Bitmap image in images) {
+					image.Dispose ();
+				}
+			}
+		}
+
+		/// <summary>
+		/// AAA
+		/// </summary>
+		/// <param name="context">Контекст процесса</param>
+		public virtual void AAA (Context context)
+		{
+			Bitmap bitmap = CombineBitmap (new[] {
+				@"C:\Андрей\Работа\Хакатон\1.png",
+				@"C:\Андрей\Работа\Хакатон\2.png"
+			});
+			// сохраняем в файл
+			bitmap.Save (@"C:\Андрей\Работа\Хакатон\3.png");
+		}
+
+		/// <summary>
+		/// BBB
+		/// </summary>
+		/// <param name="context">Контекст процесса</param>
+		public virtual void UpdateGenotype (Context context)
+		{
+			Random R = new Random ();
+			var AllGenos = PublicAPI.Objects.UserObjects.UserGenotype.Find ("");
+			foreach (var element in AllGenos)
+				element.Delete ();
+			//var AllGroupBodyPart = PublicAPI.Objects.UserObjects.UserBodyPart.Find("");
+			var AllUsers = PublicAPI.Portal.Security.User.Find ("");
+			var AllBodyPart = PublicAPI.Objects.UserObjects.UserBodyPart.Find ("");
+			foreach (var user in AllUsers)
+				foreach (var part in AllBodyPart) {
+					Genotype GT = new Genotype ();
+					GT.Active = false;
+					GT.BodyPart = part;
+					GT.Chance = R.Next (10);
+					GT.User = user;
+					GT.Save ();
+				}
+		}
+
+		/// <summary>
+		/// CreatureGeneration
+		/// </summary>
+		/// <param name="context">Контекст процесса</param>
+		/// Пересоздание существ по компетенциям
+		public virtual void CreatureGenerationCompetention (Context context)
+		{
+			Random R = new Random();
+			var AllUsers = PublicAPI.Portal.Security.User.Find ("");
+			foreach (var user in AllUsers)
+			{
+				//Снимаем отображение с части тела, если оно есть
+				var elements = PublicAPI.Objects.UserObjects.UserGenotype.Filter().Active(true).Find();
+				foreach(var element in elements)
+				{
+					element.Active = false;
+					element.Save();
+				}
+				foreach(var element in user.Kompetencii)
+				{
+					//Генерируем новое
+					List<int> = new List<int>();
+					var gens = PublicAPI.Objects.UserObjects.UserGenotype.Find(String.Format("User = {0} and BodyPart in (from BodyPart select Id where GroupBodyPart = {1})",user.Id.ToString(),element.GroupBodyPart.Id.ToString()));
+					int Summa = 0;
+					foreach(var gen in gens)
+					{
+						Summa += gen.Chance;
+					}
+					int RR = R.Next(Summa);
+					foreach(var gen in gens)
+					{
+						RR -= gen.Chance;
+						if (RR < 0)
+						{
+							gen.Active = true;
+							/*if (gen.BodyPart.GroupBodyPart.Level > 1)
+								PublicAPI.Objects.UserObjects.UserGenotype.Filter().BodyPart(gen.BodyPart.DependendsBodyPart)*/
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
