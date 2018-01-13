@@ -1,0 +1,122 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Linq;
+using System.Text;
+using EleWise.ELMA.API;
+using EleWise.ELMA.Model.Common;
+using EleWise.ELMA.Model.Entities;
+using EleWise.ELMA.Model.Managers;
+using EleWise.ELMA.Model.Types.Settings;
+using EleWise.ELMA.Model.Entities.ProcessContext;
+using Context = EleWise.ELMA.Model.Entities.ProcessContext.P_Test;
+
+namespace EleWise.ELMA.Model.Scripts
+{
+	/// <summary>
+	/// Модуль сценариев процесса "Тест"
+	/// </summary>
+	/// <example> 
+	/// <![CDATA[
+	/// >>>>>>>>>>>>>>>ВАЖНАЯ ИНФОРМАЦИЯ!!!<<<<<<<<<<<<<<<
+	/// Данный редактор создан для работы с PublicAPI. 
+	/// PublicAPI предназначен для разработки сценариев ELMA.
+	/// Например, с помощью PublicAPI можно добавить комментарий к документу:
+	/// //Загружаем документ
+	/// var doc = PublicAPI.Docflow.Document.Load(56);
+	/// //Добавляем комментарий
+	/// PublicAPI.Docflow.Document.AddComment(doc, "тут ваш комментарий");
+	/// 
+	/// Более подробно про PublicAPI вы можете узнать тут: http://www.elma-bpm.ru/kb/article-642ApiRoot.html
+	/// 
+	/// Если же вам нужна более серьёзная разработка, выходящая за рамки PublicAPI, используйте
+	/// сторонние редакторы кода, такие как SharpDevelop и VisualStudio.
+	/// Информацию по запуску кода в стороннем редакторе вы можете найти тут:
+	/// http://www.elma-bpm.ru/kb/article-837.html
+	/// ]]>
+	/// </example>
+	public partial class P_Test_Scripts : EleWise.ELMA.Workflow.Scripts.ProcessScriptBase<Context>
+	{
+		
+		public static Bitmap CombineBitmap(IEnumerable<string> files)
+		{
+			//read all images into memory
+			List<Bitmap> images = new List<Bitmap>();
+			Bitmap finalImage = null;
+
+			try
+			{
+				int width = 0;
+				int height = 0;
+
+				foreach (string image in files)
+				{
+					// create a Bitmap from the file and add it to the list
+					Bitmap bitmap = new Bitmap(image);
+
+					// update the size of the final bitmap
+					width = bitmap.Width > width ? bitmap.Width : width;
+					height = bitmap.Height > height ? bitmap.Height : height;
+
+					images.Add(bitmap);
+				}
+
+				// create a bitmap to hold the combined image
+				finalImage = new Bitmap(width, height);
+
+				// get a graphics object from the image so we can draw on it
+				using (Graphics g = Graphics.FromImage(finalImage))
+				{
+					// set background color
+					g.Clear(Color.Transparent);
+
+					// go through each image and draw it on the final image
+					foreach (Bitmap image in images)
+					{
+						g.DrawImage(image, new Rectangle(0, 0, image.Width, image.Height));
+					}
+				}
+
+				return finalImage;
+			} catch (Exception)
+			{
+				if (finalImage != null)
+					finalImage.Dispose();
+				throw;
+			} finally
+			{
+				// clean up memory
+				foreach (Bitmap image in images)
+				{
+					image.Dispose();
+				}
+			}
+		}
+		/// <summary>
+		/// AAA
+		/// </summary>
+		/// <param name="context">Контекст процесса</param>
+		public virtual void AAA(Context context)
+		{
+			/*Bitmap B1;
+			Bitmap B2;
+			B1 = (Bitmap)Image.FromFile(@"C:\Андрей\Работа\Хакатон\1.png");
+			B2 = (Bitmap)Image.FromFile(@"C:\Андрей\Работа\Хакатон\2.png");
+			Console.WriteLine(B2.Width.ToString());
+			Console.WriteLine(B2.Height.ToString());
+			var finalImage = new Bitmap(B2.Width, B2.Height, PixelFormat.Format32bppArgb);
+			var graphics = Graphics.FromImage(finalImage);
+			graphics.CompositingMode = CompositingMode.SourceOver;
+
+			graphics.DrawImage(B1, 0, 0);
+			//graphics.DrawImage(B2, 0, 0);
+			Bitmap B3 = new Bitmap((int)graphics.DpiX, (int)graphics.DpiY, graphics);
+			B3.Save(@"C:\Андрей\Работа\Хакатон\3.png", ImageFormat.Png);*/
+			Bitmap bitmap = CombineBitmap(new[] { @"C:\Андрей\Работа\Хакатон\1.png", @"C:\Андрей\Работа\Хакатон\2.png" });
+			// сохраняем в файл
+			bitmap.Save(@"C:\Андрей\Работа\Хакатон\3.png");
+		}
+	}
+}
